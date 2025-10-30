@@ -87,8 +87,6 @@ const ChatInterface = () => {
 
       <main className="flex-1 overflow-y-auto">
         <div className="container max-w-4xl mx-auto px-4 py-6 space-y-4">
-          {showEmergencyBanner && <EmergencyBanner />}
-
           {messages.length === 0 && (
             <div className="text-center py-12 space-y-4">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
@@ -121,6 +119,14 @@ const ChatInterface = () => {
           <div ref={messagesEndRef} />
         </div>
       </main>
+
+      {showEmergencyBanner && (
+        <div className="border-t border-destructive/50 bg-card/95 backdrop-blur-sm">
+          <div className="container max-w-4xl mx-auto px-4 py-3">
+            <EmergencyBanner />
+          </div>
+        </div>
+      )}
 
       <footer className="border-t bg-card/80 backdrop-blur-sm sticky bottom-0">
         <div className="container max-w-4xl mx-auto px-4 py-4">

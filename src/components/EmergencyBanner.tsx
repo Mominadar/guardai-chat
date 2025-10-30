@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 
 const EmergencyBanner = () => {
   return (
-    <Alert className="border-destructive bg-destructive/10 mb-4 animate-in fade-in slide-in-from-top-2">
-      <AlertCircle className="h-5 w-5 text-destructive" />
+    <Alert className="border-2 border-destructive bg-destructive/20 shadow-lg animate-in fade-in slide-in-from-bottom-4">
+      <AlertCircle className="h-6 w-6 text-destructive animate-pulse" />
       <AlertTitle className="text-destructive font-semibold">We're here to help</AlertTitle>
       <AlertDescription className="text-sm mt-2 space-y-3">
         <p className="text-foreground">
