@@ -158,15 +158,13 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    // Check sentiment on the last user message
+    // Check sentiment on the last user message using Gemini AI
     const lastUserMessage = messages.filter((m: any) => m.role === 'user').pop();
     let showEmergencyResources = false;
 
     if (lastUserMessage) {
-      const keywordCheck = checkSentiment(lastUserMessage.content);
-      const aiCheck = await analyzeSentimentWithAI(lastUserMessage.content, lovableApiKey);
-      showEmergencyResources = keywordCheck || aiCheck;
-      console.log('Sentiment check - Keyword:', keywordCheck, 'AI:', aiCheck);
+      showEmergencyResources = await analyzeSentimentWithAI(lastUserMessage.content, lovableApiKey);
+      console.log('AI Sentiment check result:', showEmergencyResources);
     }
 
     // Route to appropriate AI model
