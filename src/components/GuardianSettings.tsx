@@ -21,13 +21,11 @@ const GuardianSettings = () => {
 
   const fetchGuardianData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
+      // For prototype: fetch any guardian email (just get the first one)
       const { data, error } = await supabase
         .from("guardian_emails")
         .select("guardian_email, guardian_name")
-        .eq("user_id", user.id)
+        .limit(1)
         .maybeSingle();
 
       if (error) throw error;
@@ -68,22 +66,27 @@ const GuardianSettings = () => {
     setIsLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
       const guardianData = {
-        user_id: user.id,
         guardian_email: guardianEmail.trim(),
         guardian_name: guardianName.trim() || null,
       };
 
       if (hasGuardian) {
-        const { error } = await supabase
+        // Update existing guardian (update the first one for prototype)
+        const { data: existing } = await supabase
           .from("guardian_emails")
-          .update(guardianData)
-          .eq("user_id", user.id);
+          .select("id")
+          .limit(1)
+          .single();
 
-        if (error) throw error;
+        if (existing) {
+          const { error } = await supabase
+            .from("guardian_emails")
+            .update(guardianData)
+            .eq("id", existing.id);
+
+          if (error) throw error;
+        }
       } else {
         const { error } = await supabase
           .from("guardian_emails")
@@ -113,13 +116,11 @@ const GuardianSettings = () => {
     setIsLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
+      // Delete all guardian emails for prototype
       const { error } = await supabase
         .from("guardian_emails")
         .delete()
-        .eq("user_id", user.id);
+        .not("id", "is", null);
 
       if (error) throw error;
 

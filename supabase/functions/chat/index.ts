@@ -206,14 +206,14 @@ serve(async (req) => {
       showEmergencyResources = await analyzeSentimentWithAI(lastUserMessage.content, lovableApiKey);
       console.log('AI Sentiment check result:', showEmergencyResources);
       
-      // Send alert to guardian if harmful content detected and userId provided
-      if (showEmergencyResources && userId && supabaseUrl && supabaseKey) {
+      // Send alert to guardian if harmful content detected (for prototype: get any guardian email)
+      if (showEmergencyResources && supabaseUrl && supabaseKey) {
         try {
           const supabase = createClient(supabaseUrl, supabaseKey);
           const { data: guardianData } = await supabase
             .from('guardian_emails')
             .select('guardian_email, guardian_name')
-            .eq('user_id', userId)
+            .limit(1)
             .maybeSingle();
           
           if (guardianData) {
