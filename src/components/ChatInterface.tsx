@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Loader2, Bot } from "lucide-react";
+import { Send, Loader2, Bot, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import ChatMessage from "./ChatMessage";
 import EmergencyBanner from "./EmergencyBanner";
 import ModelSelector, { AIModel } from "./ModelSelector";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import GuardianSettings from "./GuardianSettings";
 
 interface Message {
   role: "user" | "assistant";
@@ -40,10 +42,13 @@ const ChatInterface = () => {
     setIsLoading(true);
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase.functions.invoke("chat", {
         body: {
           messages: [...messages, { role: "user", content: userMessage }],
           model: selectedModel,
+          userId: user?.id,
         },
       });
 
@@ -80,7 +85,22 @@ const ChatInterface = () => {
               </h1>
               <p className="text-sm text-muted-foreground">Chat safely with AI support</p>
             </div>
-            <ModelSelector value={selectedModel} onChange={setSelectedModel} />
+            <div className="flex items-center gap-2">
+              <ModelSelector value={selectedModel} onChange={setSelectedModel} />
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Settings</DialogTitle>
+                  </DialogHeader>
+                  <GuardianSettings />
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </div>
       </header>

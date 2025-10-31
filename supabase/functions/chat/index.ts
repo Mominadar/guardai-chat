@@ -1,5 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { Resend } from 'https://esm.sh/resend@2.0.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -52,6 +54,42 @@ const analyzeSentimentWithAI = async (text: string, lovableApiKey: string): Prom
   } catch (error) {
     console.error('Error in AI sentiment analysis:', error);
     return false;
+  }
+};
+
+const sendGuardianAlert = async (guardianEmail: string, guardianName: string | null, userMessage: string) => {
+  try {
+    const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+    
+    await resend.emails.send({
+      from: 'SafeChat AI <onboarding@resend.dev>',
+      to: [guardianEmail],
+      subject: 'SafeChat AI Alert: Concerning Message Detected',
+      html: `
+        <h2>SafeChat AI Alert</h2>
+        <p>Hello ${guardianName || 'Guardian'},</p>
+        <p>This is an automated alert from SafeChat AI. We've detected a message that may indicate distress or concerning content from someone you're helping to monitor.</p>
+        <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+        <p><strong>Detected message:</strong></p>
+        <blockquote style="border-left: 3px solid #dc2626; padding-left: 16px; margin: 16px 0; color: #666;">
+          ${userMessage}
+        </blockquote>
+        <p>We recommend reaching out to check on their wellbeing. If you believe there's an immediate risk, please contact emergency services.</p>
+        <p><strong>Emergency Resources:</strong></p>
+        <ul>
+          <li>National Suicide Prevention Lifeline: 988 or 1-800-273-8255</li>
+          <li>Crisis Text Line: Text "HELLO" to 741741</li>
+          <li>International Association for Suicide Prevention: <a href="https://www.iasp.info/resources/Crisis_Centres/">https://www.iasp.info/resources/Crisis_Centres/</a></li>
+        </ul>
+        <p style="color: #666; font-size: 0.875rem; margin-top: 24px;">
+          This is an automated message from SafeChat AI. You're receiving this because you were designated as a guardian contact.
+        </p>
+      `,
+    });
+    
+    console.log('Guardian alert sent successfully to:', guardianEmail);
+  } catch (error) {
+    console.error('Error sending guardian alert:', error);
   }
 };
 
@@ -143,7 +181,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, model } = await req.json();
+    const { messages, model, userId } = await req.json();
     console.log('Chat request for model:', model);
 
     if (!messages || !Array.isArray(messages)) {
@@ -153,6 +191,8 @@ serve(async (req) => {
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!lovableApiKey) {
       throw new Error('LOVABLE_API_KEY not configured');
@@ -165,6 +205,30 @@ serve(async (req) => {
     if (lastUserMessage) {
       showEmergencyResources = await analyzeSentimentWithAI(lastUserMessage.content, lovableApiKey);
       console.log('AI Sentiment check result:', showEmergencyResources);
+      
+      // Send alert to guardian if harmful content detected and userId provided
+      if (showEmergencyResources && userId && supabaseUrl && supabaseKey) {
+        try {
+          const supabase = createClient(supabaseUrl, supabaseKey);
+          const { data: guardianData } = await supabase
+            .from('guardian_emails')
+            .select('guardian_email, guardian_name')
+            .eq('user_id', userId)
+            .maybeSingle();
+          
+          if (guardianData) {
+            console.log('Sending alert to guardian:', guardianData.guardian_email);
+            await sendGuardianAlert(
+              guardianData.guardian_email,
+              guardianData.guardian_name,
+              lastUserMessage.content
+            );
+          }
+        } catch (guardianError) {
+          console.error('Error checking/sending guardian alert:', guardianError);
+          // Don't fail the request if guardian alert fails
+        }
+      }
     }
 
     // Route to appropriate AI model
