@@ -201,6 +201,7 @@ serve(async (req) => {
     // Check sentiment on the last user message using Gemini AI
     const lastUserMessage = messages.filter((m: any) => m.role === 'user').pop();
     let showEmergencyResources = false;
+    let guardianNotified = false;
 
     if (lastUserMessage) {
       showEmergencyResources = await analyzeSentimentWithAI(lastUserMessage.content, lovableApiKey);
@@ -223,6 +224,7 @@ serve(async (req) => {
               guardianData.guardian_name,
               lastUserMessage.content
             );
+            guardianNotified = true;
           }
         } catch (guardianError) {
           console.error('Error checking/sending guardian alert:', guardianError);
@@ -250,7 +252,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ response, showEmergencyResources }),
+      JSON.stringify({ response, showEmergencyResources, guardianNotified }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

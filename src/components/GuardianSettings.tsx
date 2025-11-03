@@ -5,9 +5,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Shield, Loader2, Save, Trash2 } from "lucide-react";
+import { Shield, Loader2, Save, Trash2, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-const GuardianSettings = () => {
+interface GuardianSettingsProps {
+  onSave?: () => void;
+}
+
+const GuardianSettings = ({ onSave }: GuardianSettingsProps) => {
   const [guardianEmail, setGuardianEmail] = useState("");
   const [guardianName, setGuardianName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -100,6 +105,11 @@ const GuardianSettings = () => {
         title: "Success",
         description: "Guardian contact saved successfully.",
       });
+      
+      // Close modal after successful save
+      if (onSave) {
+        onSave();
+      }
     } catch (error: any) {
       console.error("Error saving guardian:", error);
       toast({
@@ -166,6 +176,15 @@ const GuardianSettings = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-xs">
+            Note: For email alerts to work in production, you need to verify your domain with Resend at{" "}
+            <a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer" className="underline">
+              resend.com/domains
+            </a>
+          </AlertDescription>
+        </Alert>
         <div className="space-y-2">
           <Label htmlFor="guardian-name">Guardian Name (Optional)</Label>
           <Input

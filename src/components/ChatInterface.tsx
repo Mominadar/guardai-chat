@@ -21,6 +21,7 @@ const ChatInterface = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showEmergencyBanner, setShowEmergencyBanner] = useState(false);
   const [selectedModel, setSelectedModel] = useState<AIModel>("gemini");
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -58,6 +59,13 @@ const ChatInterface = () => {
         setShowEmergencyBanner(true);
       }
 
+      if (data.guardianNotified) {
+        toast({
+          title: "Guardian Notified",
+          description: "Your guardian has been alerted about your message.",
+        });
+      }
+
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: data.response },
@@ -87,7 +95,7 @@ const ChatInterface = () => {
             </div>
             <div className="flex items-center gap-2">
               <ModelSelector value={selectedModel} onChange={setSelectedModel} />
-              <Dialog>
+              <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="icon">
                     <Settings className="h-4 w-4" />
@@ -97,7 +105,7 @@ const ChatInterface = () => {
                   <DialogHeader>
                     <DialogTitle>Settings</DialogTitle>
                   </DialogHeader>
-                  <GuardianSettings />
+                  <GuardianSettings onSave={() => setIsSettingsOpen(false)} />
                 </DialogContent>
               </Dialog>
             </div>
